@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Model Calibration — IMMC Training</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
@@ -384,19 +384,20 @@ ul.bullets {
   gap: 9px;
 }
 ul.bullets li {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  position: relative;
+  padding-left: 18px;   /* space for dash */
+  display: block;       /* important: remove flex */
   font-size: clamp(12.5px, 1.4vw, 15px);
   line-height: 1.65;
   color: var(--ink-mid);
 }
 ul.bullets li::before {
   content: '—';
+  position: absolute;
+  left: 0;
+  top: 0.15em;
   color: var(--accent);
   font-size: 12px;
-  margin-top: 3px;
-  flex-shrink: 0;
   font-family: 'JetBrains Mono', monospace;
   opacity: 0.7;
 }
@@ -827,16 +828,63 @@ hr.rule {
   font-size: 10px;
   color: var(--ink-light);
 }
-.plot-wrap {
-  background: var(--paper);
-  border: 1px solid var(--rule-light);
-  padding: 6px;
+.plot-wrap{
+  background: linear-gradient(180deg, #ffffff 0%, var(--paper-dim) 100%);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.03) inset;
 }
-.plot-canvas {
+
+.plot-canvas{
   width: 100%;
-  height: 170px;
+  height: clamp(170px, 22vh, 210px);
   display: block;
   background: #fff;
+  border: 1px solid var(--rule-light);
+  border-radius: 10px;
+}
+.ctrl input[type="range"]{
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 22px;
+  background: transparent;
+}
+
+.ctrl input[type="range"]::-webkit-slider-runnable-track{
+  height: 6px;
+  background: linear-gradient(90deg, rgba(160,32,32,0.25), rgba(18,18,18,0.08));
+  border-radius: 999px;
+  border: 1px solid var(--rule-light);
+}
+
+.ctrl input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid rgba(18,18,18,0.25);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+.ctrl input[type="range"]::-moz-range-track{
+  height: 6px;
+  background: linear-gradient(90deg, rgba(160,32,32,0.25), rgba(18,18,18,0.08));
+  border-radius: 999px;
+  border: 1px solid var(--rule-light);
+}
+
+.ctrl input[type="range"]::-moz-range-thumb{
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid rgba(18,18,18,0.25);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
 }
 
 @keyframes wfPulse {
@@ -1508,7 +1556,7 @@ hr.rule {
                 <span class="stat-chip" id="gdx-theta">θ*=0.000</span>
               </div>
             </div>
-            <div class="plot-wrap"><canvas class="plot-canvas" id="gdx-canvas" width="620" height="170"></canvas></div>
+            <div class="plot-wrap"><canvas class="plot-canvas" id="gdx-canvas"></canvas></div>
           </div>
         </div>
       </div>
@@ -2301,6 +2349,169 @@ const total = slides.length;
 let current = 0;
 let isAnimating = false;
 
+// --- Plot registry so we can restart/resize plots on slide change ---
+const plotByCanvasId = new Map();
+
+function refreshActivePlots(mode = "restart") {
+  const active = slides[current];
+  if (!active) return;
+  active.querySelectorAll("canvas.plot-canvas").forEach((c) => {
+    const anim = plotByCanvasId.get(c.id);
+    if (!anim) return;
+    if (mode === "full") anim.drawFull?.();
+    else anim.restart?.();
+  });
+}
+
+// Redraw plots on window resize (keeps them crisp + correctly scaled)
+window.addEventListener("resize", () => refreshActivePlots("full"));
+
+/** HiDPI-safe canvas prep that returns a responsive plotting box. */
+function prepCanvas(canvas, ctx) {
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  const cssW = Math.max(1, canvas.clientWidth);
+  const cssH = Math.max(1, canvas.clientHeight);
+
+  const need = (canvas.width !== Math.round(cssW * dpr)) || (canvas.height !== Math.round(cssH * dpr));
+  if (need) {
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+  }
+
+  // Draw in CSS pixels (transform handles device pixels)
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+
+  const pad = { l: 40, r: 14, t: 12, b: 28 };
+  const plotW = Math.max(1, cssW - pad.l - pad.r);
+  const plotH = Math.max(1, cssH - pad.t - pad.b);
+
+  return {
+    w: cssW, h: cssH, pad, plotW, plotH,
+    x0: pad.l, y0: pad.t,
+    x1: cssW - pad.r, y1: cssH - pad.b
+  };
+}
+
+function xMap(m, x, xMin, xMax) {
+  return m.x0 + ((x - xMin) / (xMax - xMin)) * m.plotW;
+}
+function yMap(m, y, yMin, yMax) {
+  return m.y1 - ((y - yMin) / (yMax - yMin)) * m.plotH;
+}
+
+function roundRectPath(ctx, x, y, w, h, r) {
+  const rr = Math.max(0, Math.min(r, Math.min(w, h) / 2));
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rr);
+  ctx.arcTo(x + w, y + h, x, y + h, rr);
+  ctx.arcTo(x, y + h, x, y, rr);
+  ctx.arcTo(x, y, x + w, y, rr);
+  ctx.closePath();
+}
+
+function drawWrappedText(ctx, text, x, y, maxW, lineH, maxLines = 3) {
+  const words = String(text).split(/\s+/);
+  let line = "";
+  let lines = 0;
+
+  for (let i = 0; i < words.length; i++) {
+    const test = line ? `${line} ${words[i]}` : words[i];
+    if (ctx.measureText(test).width <= maxW) {
+      line = test;
+      continue;
+    }
+    ctx.fillText(line, x, y);
+    lines++;
+    if (lines >= maxLines - 1) {
+      const rest = words.slice(i).join(" ");
+      const ell = "…";
+      let clipped = rest;
+      while (clipped && ctx.measureText(clipped + ell).width > maxW) {
+        clipped = clipped.slice(0, -1);
+      }
+      ctx.fillText((clipped || rest) + ell, x, y + lineH);
+      return;
+    }
+    line = words[i];
+    y += lineH;
+  }
+  if (line) ctx.fillText(line, x, y);
+}
+
+function plotFrame(ctx, m, { yTicks = 5 } = {}) {
+  ctx.clearRect(0, 0, m.w, m.h);
+
+  // background
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, m.w, m.h);
+
+  // grid
+  ctx.strokeStyle = "#ededed";
+  ctx.lineWidth = 1;
+  for (let i = 1; i <= yTicks; i++) {
+    const y = m.y0 + (i / (yTicks + 1)) * m.plotH;
+    ctx.beginPath();
+    ctx.moveTo(m.x0, Math.round(y) + 0.5);
+    ctx.lineTo(m.x1, Math.round(y) + 0.5);
+    ctx.stroke();
+  }
+
+  // axes
+  ctx.strokeStyle = "#d9d9d9";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(m.x0 + 0.5, m.y0);
+  ctx.lineTo(m.x0 + 0.5, m.y1);
+  ctx.lineTo(m.x1, m.y1 + 0.5);
+  ctx.stroke();
+}
+
+function drawGraphNote(ctx, m, title, text) {
+  const boxW = Math.min(330, Math.max(220, Math.round(m.w * 0.48)));
+  const boxH = 58;
+  const x = m.w - boxW - 14;
+  const y = 14;
+
+  ctx.save();
+  roundRectPath(ctx, x, y, boxW, boxH, 10);
+  ctx.fillStyle = "rgba(255,255,255,0.94)";
+  ctx.fill();
+  ctx.strokeStyle = "#d6d6d6";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = "#8f1d1d";
+  ctx.font = '600 10px "JetBrains Mono", monospace';
+  ctx.fillText(title, x + 10, y + 16);
+
+  ctx.fillStyle = "#333";
+  ctx.font = '12px "EB Garamond", serif';
+  drawWrappedText(ctx, text, x + 10, y + 36, boxW - 20, 14, 2);
+  ctx.restore();
+}
+
+function drawLegend(ctx, m, items) {
+  const x = m.x0 + 8;
+  const y = m.y0 + 10;
+  ctx.save();
+  ctx.font = '10px "JetBrains Mono", monospace';
+  items.forEach((it, k) => {
+    const yy = y + k * 14;
+    ctx.strokeStyle = it.color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x, yy);
+    ctx.lineTo(x + 18, yy);
+    ctx.stroke();
+
+    ctx.fillStyle = "#444";
+    ctx.fillText(it.label, x + 24, yy + 3);
+  });
+  ctx.restore();
+}
+
 const sectionMap = {
   0: 'IMMC Training · Mathematics Initiatives in Nepal',
   1: 'Motivation',
@@ -2360,6 +2571,7 @@ function navigate(dir) {
     slides[current].classList.add('active');
     updateUI();
     renderMath(slides[current]);
+    refreshActivePlots("restart");
     isAnimating = false;
   }, 180);
 }
@@ -2511,6 +2723,15 @@ function initGradientDescentLab(cfg) {
   const canvas = document.getElementById(cfg.canvas);
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
+
+const dpr = window.devicePixelRatio || 1;
+const cssW = canvas.clientWidth;   // size after CSS/layout
+const cssH = canvas.clientHeight;
+
+canvas.width  = Math.round(cssW * dpr);
+canvas.height = Math.round(cssH * dpr);
+
+ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // scale drawing units to CSS pixels
   const etaInput = document.getElementById(cfg.eta);
   const startInput = document.getElementById(cfg.start);
   const stepsInput = document.getElementById(cfg.steps);
@@ -2519,8 +2740,8 @@ function initGradientDescentLab(cfg) {
   const resetBtn = document.getElementById(cfg.reset);
 
   function run(progress = 1) {
-    const width = canvas.width;
-    const height = canvas.height;
+    const width = canvas.clientWidth;
+const height = canvas.clientHeight;
     const eta = Number(etaInput.value);
     const start = Number(startInput.value);
     const steps = Number(stepsInput.value);
@@ -2615,8 +2836,8 @@ function initSirLab(cfg) {
   const daysInput = document.getElementById(cfg.days);
 
   function run(progress = 1) {
-    const width = canvas.width;
-    const height = canvas.height;
+    const width = canvas.clientWidth;
+const height = canvas.clientHeight;
     const beta = Number(betaInput.value);
     const gamma = Number(gammaInput.value);
     const i0 = Number(i0Input.value) / 100;
@@ -2704,8 +2925,8 @@ function initLogisticLab(cfg) {
   }
 
   function run(progress = 1) {
-    const width = canvas.width;
-    const height = canvas.height;
+    const width = canvas.clientWidth;
+const height = canvas.clientHeight;
     const K = Number(kInput.value);
     const A = Number(aInput.value);
     const r = Number(rInput.value);
