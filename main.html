@@ -23,6 +23,7 @@
   --accent-pale: rgba(160,32,32,0.05);
   --code-bg:    #f4f4f2;
   --bg-main:    #ececec;
+  --deck-scale: 1.5;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -80,7 +81,13 @@ td .katex,
 
 /* ---- OUTER FRAME ---- */
 #deck {
-  position: fixed; inset: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: calc(100% / var(--deck-scale));
+  height: calc(100% / var(--deck-scale));
+  transform: scale(var(--deck-scale));
+  transform-origin: top left;
   display: flex;
   flex-direction: column;
 }
