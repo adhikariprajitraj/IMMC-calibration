@@ -1545,6 +1545,151 @@
         </div>
       </div>
 
+      <!-- 39B VALIDATION PROTOCOL -->
+      <div class="slide" data-title="Validation Protocol and Leakage">
+        <div class="slide-inner">
+          <div class="slide-num-corner">39B</div>
+          <div class="slide-header">
+            <div class="section-label">Evaluation Practice</div>
+            <h2>Validation Protocol: Avoid Data Leakage</h2>
+          </div>
+          <div class="slide-body">
+            <p class="lead">A model can look excellent on training data and still fail in real use. Use a clean split protocol.</p>
+
+            <div class="workflow">
+              <div class="workflow-node">
+                <div class="wf-label">Stage 1</div>
+                <div class="wf-title">Train Set</div>
+                <div class="wf-sub">fit parameters</div>
+              </div>
+              <div class="workflow-arrow">→</div>
+              <div class="workflow-node">
+                <div class="wf-label">Stage 2</div>
+                <div class="wf-title">Validation Set</div>
+                <div class="wf-sub">choose model/settings</div>
+              </div>
+              <div class="workflow-arrow">→</div>
+              <div class="workflow-node">
+                <div class="wf-label">Stage 3</div>
+                <div class="wf-title">Test Set</div>
+                <div class="wf-sub">final report only once</div>
+              </div>
+            </div>
+
+            <div class="two-col">
+              <div class="col-block">
+                <h3>Simple Rules</h3>
+                <ul class="bullets">
+                  <li><strong>Never tune on test data.</strong> Keep test data untouched until the final step.</li>
+                  <li><strong>Use cross-validation</strong> when data is limited.</li>
+                  <li><strong>For time data,</strong> evaluate on future points (not shuffled random splits).</li>
+                </ul>
+              </div>
+              <div class="col-block">
+                <h3>Leakage Warning Signs</h3>
+                <ul class="bullets">
+                  <li>Unusually high validation scores that collapse on new data.</li>
+                  <li>Preprocessing done before splitting (normalization using full dataset).</li>
+                  <li>Features that contain future or target information indirectly.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="callout">
+              <strong>Practice note.</strong> This train/validation/test framing and cross-validation advice follows common guidance in modern ML references (e.g., scikit-learn model evaluation guide).
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 39C METRIC CHOICE -->
+      <div class="slide" data-title="Choosing Metrics Carefully">
+        <div class="slide-inner">
+          <div class="slide-num-corner">39C</div>
+          <div class="slide-header">
+            <div class="section-label">Evaluation Practice</div>
+            <h2>Metric Choice: What to Report and Why</h2>
+          </div>
+          <div class="slide-body">
+            <p class="lead">Different metrics answer different questions; one metric alone can be misleading.</p>
+
+            <table class="loss-table">
+              <thead>
+                <tr><th>Metric</th><th>Good For</th><th>Caution</th><th>Simple Guidance</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>MAE</strong></td>
+                  <td>Average absolute error in original units</td>
+                  <td>Less sensitive to rare large errors</td>
+                  <td>Use for easy stakeholder interpretation</td>
+                </tr>
+                <tr>
+                  <td><strong>RMSE</strong></td>
+                  <td>Penalizes large errors more strongly</td>
+                  <td>Can be dominated by outliers</td>
+                  <td>Use when large misses are costly</td>
+                </tr>
+                <tr>
+                  <td><strong>MAPE</strong></td>
+                  <td>Unit-free percentage style reporting</td>
+                  <td>Unstable when true values are near zero</td>
+                  <td>Avoid near-zero denominators</td>
+                </tr>
+                <tr>
+                  <td><strong>ECE / Reliability</strong></td>
+                  <td>Probability calibration quality</td>
+                  <td>Depends on binning and sample size</td>
+                  <td>Pair with reliability diagram, not alone</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="note-box">
+              <strong>Simple reporting template.</strong> Report one scale-based metric (MAE or RMSE), one calibration metric (if probabilistic), and one visual diagnostic (residual or reliability plot).
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 39D REPRODUCIBILITY -->
+      <div class="slide" data-title="Reproducibility and External Resources">
+        <div class="slide-inner">
+          <div class="slide-num-corner">39D</div>
+          <div class="slide-header">
+            <div class="section-label">Evaluation Practice</div>
+            <h2>Reproducibility Checklist + Useful Resources</h2>
+          </div>
+          <div class="slide-body">
+            <div class="two-col">
+              <div class="col-block">
+                <h3>Reproducibility Essentials</h3>
+                <ul class="checklist">
+                  <li>Record dataset version/date and filtering rules.</li>
+                  <li>Fix random seeds and list software/library versions.</li>
+                  <li>Store train/validation/test split logic in code.</li>
+                  <li>Publish calibrated parameter values with units.</li>
+                  <li>Include plots and tables generated from the same script.</li>
+                </ul>
+              </div>
+
+              <div class="col-block">
+                <h3>External References to Learn More</h3>
+                <ul class="bullets">
+                  <li><strong>scikit-learn docs:</strong> calibration curves, sigmoid/isotonic/temperature scaling, CV workflows.</li>
+                  <li><strong>Forecasting: Principles &amp; Practice:</strong> train-test separation and metric caveats (MAE/RMSE/MAPE).</li>
+                  <li><strong>NIST STRD:</strong> benchmark datasets for objective checking of statistical software accuracy.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="callout">
+              <strong>IMMC advantage.</strong> Teams that show reproducible workflows and metric rationale usually write stronger, more trustworthy reports.
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- 40 CHECKLIST -->
       <div class="slide" data-title="IMMC Reporting Checklist">
         <div class="slide-inner">
@@ -1608,7 +1753,7 @@
     </div><!-- /stage -->
 
     <div id="controls">
-      <span class="slide-counter" id="slide-counter">01 / 43</span>
+      <span class="slide-counter" id="slide-counter">01 / 46</span>
       <span class="section-indicator" id="section-indicator">IMMC Training · Mathematics Initiatives in Nepal</span>
       <div class="nav-buttons">
         <button class="nav-btn" id="btn-prev" onclick="navigate(-1)" disabled>← prev</button>
