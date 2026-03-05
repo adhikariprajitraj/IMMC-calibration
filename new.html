@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Model Calibration — IMMC Training</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+    options: { renderActions: { addMenu: [] } },
+    startup: { typeset: true }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root {
+  --ink: #1a1a1a; --ink-mid: #3a3a3a; --ink-light: #6a6a6a; --ink-faint: #9a9a9a;
+  --paper: #ffffff; --paper-dim: #fcfaf7; --rule: #e0ddd5; --rule-light: #f0ede6;
+  --accent: #a02020; --accent-pale: rgba(160,32,32,0.05); --code-bg: #f5f2ed; --bg-main: #efede9;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { height: 100vh; background: var(--bg-main); color: var(--ink); font-family: 'EB Garamond', Georgia, serif; overflow: hidden; }
+
+#progress-bar { position: fixed; top: 0; left: 0; height: 4px; background: var(--accent); transition: width 0.4s ease; z-index: 1000; }
+
+#stage { position: relative; height: 100vh; display: flex; align-items: center; justify-content: center; padding: 40px 60px 80px 60px; }
+
+.slide { position: absolute; width: calc(100% - 120px); height: calc(100% - 120px); opacity: 0; transform: translateY(10px); transition: all 0.4s ease; pointer-events: none; display: flex; }
+.slide.active { opacity: 1; transform: translateY(0); pointer-events: all; }
+.slide.exit { opacity: 0; transform: translateY(-10px); }
+
+.slide-inner { flex: 1; background: var(--paper); border: 1px solid var(--rule); box-shadow: 0 20px 50px rgba(0,0,0,0.08); display: flex; flex-direction: column; overflow: hidden; }
+
+.slide-header { padding: 30px 50px 15px; border-bottom: 1px solid var(--rule-light); position: relative; flex-shrink: 0; }
+.slide-header::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--accent); }
+
+.section-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px; display: block; }
+.slide-header h2 { font-family: 'Cormorant Garamond', serif; font-size: clamp(20px, 2.5vw, 30px); font-weight: 600; color: var(--ink); line-height: 1.1; }
+
+.slide-body { flex: 1; padding: 25px 50px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+
+/* Animations */
+.slide.active .slide-body > * { animation: slideFadeIn 0.5s ease forwards; opacity: 0; }
+@keyframes slideFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.slide-body > *:nth-child(1) { animation-delay: 0.05s; }
+.slide-body > *:nth-child(2) { animation-delay: 0.1s; }
+.slide-body > *:nth-child(3) { animation-delay: 0.15s; }
+.slide-body > *:nth-child(4) { animation-delay: 0.2s; }
+
+/* Layout Blocks */
+.math-box { background: var(--code-bg); padding: 18px; border-left: 3px solid var(--accent); font-size: 1.2em; text-align: center; margin: 5px 0; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.col-block { background: var(--paper-dim); border: 1px solid var(--rule-light); padding: 15px; }
+.col-block h3 { font-family: 'Cormorant Garamond', serif; font-size: 15px; border-bottom: 1px solid var(--rule); padding-bottom: 6px; margin-bottom: 10px; }
+
+ul.bullets { list-style: none; }
+ul.bullets li { position: relative; padding-left: 20px; margin-bottom: 8px; line-height: 1.5; }
+ul.bullets li::before { content: '—'; position: absolute; left: 0; color: var(--accent); font-weight: bold; }
+
+.def-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.def-card { background: var(--paper-dim); border: 1px solid var(--rule-light); border-top: 3px solid var(--ink-light); padding: 12px; }
+.def-card.accent { border-top-color: var(--accent); }
+.def-card h4 { font-family: 'Cormorant Garamond'; font-size: 14px; margin-bottom: 5px; }
+.def-card p { font-size: 12px; color: var(--ink-light); line-height: 1.4; }
+
+.loss-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.loss-table th { font-family: 'JetBrains Mono'; font-size: 9px; text-transform: uppercase; text-align: left; padding: 8px; border-bottom: 1px solid var(--rule); background: var(--paper-dim); }
+.loss-table td { padding: 8px; border-bottom: 1px solid var(--rule-light); vertical-align: top; }
+
+.callout { background: var(--accent-pale); border-left: 3px solid var(--accent); padding: 12px 18px; font-style: italic; font-size: 0.9em; }
+.note-box { background: var(--paper-dim); border-left: 3px solid var(--ink-mid); padding: 12px 18px; font-size: 0.9em; }
+
+/* Title & Section Special */
+.title-slide .slide-inner { justify-content: center; align-items: center; text-align: center; }
+.title-slide h1 { font-family: 'Cormorant Garamond', serif; font-size: 4em; font-weight: 300; }
+.title-slide h1 em { color: var(--accent); font-style: italic; }
+.title-rule { width: 60px; height: 2px; background: var(--accent); margin: 25px 0; }
+
+.section-slide .slide-inner { background: var(--ink); color: white; justify-content: center; align-items: center; text-align: center; }
+.section-slide h2 { font-family: 'Cormorant Garamond', serif; font-size: 3em; font-weight: 300; color: white; }
+
+/* Navigation */
+#controls { position: fixed; bottom: 0; left: 0; right: 0; padding: 15px 60px; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.85); backdrop-filter: blur(8px); border-top: 1px solid var(--rule-light); }
+.nav-btn { background: var(--ink); color: white; border: none; padding: 8px 16px; font-family: 'JetBrains Mono', monospace; font-size: 10px; cursor: pointer; }
+.nav-btn:disabled { opacity: 0.15; cursor: default; }
+#slide-counter { font-family: 'JetBrains Mono'; font-size: 11px; color: var(--ink-light); }
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<div id="stage">
+  <div class="slide title-slide active" data-title="Start">
+    <div class="slide-inner">
+      <span class="section-label">Mathematics Initiatives in Nepal</span>
+      <h1>Model <em>Calibration</em></h1>
+      <div class="title-rule"></div>
+      <p style="font-size: 1.2em; color: var(--ink-light); max-width: 600px;">Parameter Estimation & Validation Strategy for IMMC</p>
+      <div style="margin-top: 30px;" class="title-meta">Prajit Adhikari · 2026 Training Series</div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="Motivation">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">01 · Intro</span><h2>Why Model Calibration?</h2></div>
+      <div class="slide-body">
+        <ul class="bullets">
+          <li>Predictions must match reality within acceptable error.</li>
+          <li>Tuning parameters bridges theory and empirical evidence.</li>
+          <li>Without it, a model is just a hypothesis without grounding.</li>
+        </ul>
+        <div class="math-box">\[ \hat{\theta} = \arg\min_{\theta \in \Theta} \; \mathcal{L}(\theta;\, \mathbf{y}_{\text{obs}}) \]</div>
+        <div class="callout">IMMC solutions require "credible recommendations"—this requires calibration.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="Goals">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">01 · Intro</span><h2>Session Goals</h2></div>
+      <div class="slide-body">
+        <p class="lead">By the end of this session, you will be able to:</p>
+        <ul class="bullets">
+          <li>Formulate calibration as an optimization problem.</li>
+          <li>Choose and justify an appropriate <strong>Loss Function</strong>.</li>
+          <li>Diagnose fit quality using <strong>Residual Analysis</strong>.</li>
+          <li>Quantify uncertainty using <strong>Bootstrapping</strong>.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="Roadmap">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">01 · Intro</span><h2>Roadmap</h2></div>
+      <div class="slide-body">
+        <div class="two-col">
+          <div class="col-block"><h3>Part I-IV</h3><ul><li>Core Concepts</li><li>Loss Functions</li><li>Optimization</li><li>Diagnostics</li></ul></div>
+          <div class="col-block"><h3>Part V-VIII</h3><ul><li>Uncertainty</li><li>Probability</li><li>Case Studies</li><li>Checklist</li></ul></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide section-slide" data-title="Section I">
+    <div class="slide-inner"><span class="section-label">Part I</span><h2>Core Concepts</h2></div>
+  </div>
+
+  <div class="slide" data-title="Anatomy">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">02 · Concepts</span><h2>Inputs, Parameters, and Outputs</h2></div>
+      <div class="slide-body">
+        <div class="math-box">\[ y_{\text{pred}} = f(x;\,\theta) \]</div>
+        <div class="def-grid">
+          <div class="def-card"><h4>Inputs ($x$)</h4><p>Variables we control/observe: Time, dose, or distance.</p></div>
+          <div class="def-card accent"><h4>Parameters ($\theta$)</h4><p>Unknown constants: Growth rates, thresholds, decay rates.</p></div>
+          <div class="def-card"><h4>Outputs ($y$)</h4><p>Predicted values to be compared with real data.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="V vs V vs C">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">02 · Concepts</span><h2>Verification vs. Validation vs. Calibration</h2></div>
+      <div class="slide-body">
+        <div class="two-col">
+          <div class="col-block"><h3>Verification</h3><p>Did we solve the math correctly? (Bug checks).</p></div>
+          <div class="col-block"><h3>Calibration</h3><p>Tuning $\theta$ to match data.</p></div>
+        </div>
+        <div class="callout"><strong>Validation:</strong> Does the model actually represent the real world?</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="Error">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">02 · Concepts</span><h2>Data and Error Structure</h2></div>
+      <div class="slide-body">
+        <div class="math-box">\[ y_{\text{obs}} = f(x;\,\theta) + \varepsilon \]</div>
+        <p>Three types of error to account for:</p>
+        <ul class="bullets">
+          <li><strong>Measurement Noise:</strong> Instrument precision issues.</li>
+          <li><strong>Process Noise:</strong> Randomness in the system (e.g. weather).</li>
+          <li><strong>Model Discrepancy:</strong> Systematic bias from missing mechanisms.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="Workflow">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">02 · Concepts</span><h2>Calibration Workflow</h2></div>
+      <div class="slide-body">
+        <p>1. Define Model $\rightarrow$ 2. Choose Loss $\rightarrow$ 3. Optimize $\rightarrow$ 4. Validate $\rightarrow$ 5. Report.</p>
+        <div class="note-box">This loop may iterate if validation performance is poor.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide section-slide" data-title="Section II">
+    <div class="slide-inner"><span class="section-label">Part II</span><h2>Deterministic Calibration</h2></div>
+  </div>
+
+  <div class="slide" data-title="Residuals">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">03 · Deterministic</span><h2>Residual Analysis</h2></div>
+      <div class="slide-body">
+        <p>The residual is the "error" at each point $i$:</p>
+        <div class="math-box">\[ r_i(\theta) = y_i - f(x_i;\,\theta) \]</div>
+        <ul class="bullets">
+          <li>Residual plots reveal <strong>systematic patterns</strong>.</li>
+          <li>Ideal residuals are a random scatter around zero.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="Loss Functions">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">03 · Deterministic</span><h2>Choosing a Loss Function</h2></div>
+      <div class="slide-body">
+        <table class="loss-table">
+          <tr><th>Name</th><th>Formula</th><th>Recommended When</th></tr>
+          <tr><td>SSE</td><td>$\sum r_i^2$</td><td>Gaussian noise, no outliers.</td></tr>
+          <tr><td>RMSE</td><td>$\sqrt{\text{SSE}/n}$</td><td>Easy interpretation (same units).</td></tr>
+          <tr><td>MAE</td><td>$\frac{1}{n} \sum |r_i|$</td><td>Heavy outliers (Robust fit).</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="Weighted LS">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">03 · Deterministic</span><h2>Weighted Least Squares</h2></div>
+      <div class="slide-body">
+        <div class="math-box">\[ \mathcal{L}(\theta) = \sum \left(\frac{r_i}{\sigma_i}\right)^2 \]</div>
+        <p>Used when some sensors are more reliable than others or when variance increases with the response variable.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="Regularization">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">03 · Deterministic</span><h2>Constraints & Regularization</h2></div>
+      <div class="slide-body">
+        <div class="math-box">\[ \mathcal{L}(\theta) = \text{SSE} + \lambda \|\theta\|^2 \]</div>
+        <ul class="bullets">
+          <li><strong>Constraints:</strong> $\theta \ge 0$ (Physical bounds).</li>
+          <li><strong>Regularization:</strong> Prevents overfitting when data is limited.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="Identifiability">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">03 · Deterministic</span><h2>Identifiability</h2></div>
+      <div class="slide-body">
+        <p>Can the data actually pin down the values of $\theta$?</p>
+        <div class="two-col">
+          <div class="col-block"><h3>Failures</h3><p>Correlated parameters where one compensates for the other.</p></div>
+          <div class="col-block"><h3>Remedies</h3><p>Richer data, fewer parameters, or prior constraints.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide section-slide" data-title="Section III">
+    <div class="slide-inner"><span class="section-label">Part III</span><h2>Optimisation</h2></div>
+  </div>
+
+  <div class="slide" data-title="Opt Problem">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">04 · Optimisation</span><h2>Calibration as Optimisation</h2></div>
+      <div class="slide-body">
+        <div class="math-box">\[ \hat{\theta} = \arg\min_{\theta \in \Theta} \; \mathcal{L}(\theta) \]</div>
+        <p>Key choices: Optimiser type (Gradient vs Grid), Initial Guess ($\theta_0$), and Stopping Criteria.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="Gradient Descent">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">04 · Optimisation</span><h2>Gradient Descent</h2></div>
+      <div class="slide-body">
+        <div class="math-box">\[ \theta_{k+1} = \theta_k - \eta \nabla \mathcal{L}(\theta_k) \]</div>
+        <ul class="bullets">
+          <li>Step size $\eta$ is critical.</li>
+          <li>Adaptive methods like <strong>Adam</strong> are faster in practice.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="Local Minima">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">04 · Optimisation</span><h2>Local Minima & Multi-Start</h2></div>
+      <div class="slide-body">
+        <p>Non-convex losses have multiple valleys. A single run might get stuck in a "bad" local minimum.</p>
+        <div class="callout"><strong>Strategy:</strong> Run the optimizer from many random initializations and keep the best result.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="LM Algorithm">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">04 · Optimisation</span><h2>Levenberg–Marquardt</h2></div>
+      <div class="slide-body">
+        <p>The standard for Non-linear Least Squares. It blends Gradient Descent (when far from target) and Gauss-Newton (when near target).</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="Scaling">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">04 · Optimisation</span><h2>Scaling and Units</h2></div>
+      <div class="slide-body">
+        <p>If $\theta_1$ is $10^6$ and $\theta_2$ is $10^{-6}$, solvers struggle. Reparameterize or normalize your variables before solving.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide section-slide" data-title="Section IV">
+    <div class="slide-inner"><span class="section-label">Part IV</span><h2>Diagnostics & Validation</h2></div>
+  </div>
+
+  <div class="slide" data-title="Diag Patterns">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">05 · Validation</span><h2>Residual Diagnostic Patterns</h2></div>
+      <div class="slide-body">
+        <ul class="bullets">
+          <li><strong>Curved Trend:</strong> Missing non-linearity in model.</li>
+          <li><strong>Funnel Shape:</strong> Variance increases with x.</li>
+          <li><strong>Autocorrelation:</strong> Missing temporal dynamics.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="Robust Cal">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">05 · Validation</span><h2>Handling Outliers</h2></div>
+      <div class="slide-body">
+        <div class="def-grid">
+          <div class="def-card"><h4>Huber Loss</h4><p>MSE near zero, MAE further out.</p></div>
+          <div class="def-card"><h4>Trimming</h4><p>Removing extreme noise (requires justification).</p></div>
+          <div class="def-card accent"><h4>Reporting</h4><p>Never hide outliers; explain them.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="Splits">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">05 · Validation</span><h2>Train / Val / Test Splits</h2></div>
+      <div class="slide-body">
+        <p>Avoid memorizing noise. 1. <strong>Train:</strong> Fit parameters. 2. <strong>Val:</strong> Select model. 3. <strong>Test:</strong> Final evaluation.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="CV">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">05 · Validation</span><h2>Cross-Validation</h2></div>
+      <div class="slide-body">
+        <div class="math-box">\[ \text{CV Error} = \frac{1}{K}\sum \mathcal{L}(\hat{\theta}_{-k};\, D_k) \]</div>
+        <p>Essential when data is limited. Divide into K folds and rotate which one is the "test" set.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="Walk-Forward">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">05 · Validation</span><h2>Walk-Forward Validation</h2></div>
+      <div class="slide-body">
+        <p>For time series: Never shuffle. Always train on the past to predict the future.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide section-slide" data-title="Section V">
+    <div class="slide-inner"><span class="section-label">Part V</span><h2>Uncertainty Quantification</h2></div>
+  </div>
+
+  <div class="slide" data-title="UQ">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">06 · Uncertainty</span><h2>How sure are we?</h2></div>
+      <div class="slide-body">
+        <p>A single point estimate is incomplete. We need:</p>
+        <ul class="bullets">
+          <li><strong>Confidence Intervals:</strong> Range for $\theta$.</li>
+          <li><strong>Prediction Intervals:</strong> Range for future $y$.</li>
+          <li><strong>Sensitivity Analysis:</strong> What happens if $\theta$ changes 10%?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="Bootstrap">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">06 · Uncertainty</span><h2>The Bootstrap Method</h2></div>
+      <div class="slide-body">
+        <ol class="bullets">
+          <li>Resample data with replacement.</li>
+          <li>Recalibrate on the new sample.</li>
+          <li>Repeat 1000x to build a distribution.</li>
+          <li>Extract percentiles (2.5% and 97.5%) for 95% CI.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="Bayesian">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">06 · Uncertainty</span><h2>Bayesian Calibration</h2></div>
+      <div class="slide-body">
+        <div class="math-box">\[ P(\theta | D) \propto P(D | \theta) P(\theta) \]</div>
+        <p>Treats parameters as probability distributions rather than single numbers.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="Discrepancy">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">06 · Uncertainty</span><h2>Model Discrepancy</h2></div>
+      <div class="slide-body">
+        <p>When even the "best" $\theta$ fails, the model is likely missing a mechanism. Segment the data or add an explicit bias term.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide section-slide" data-title="Section VI">
+    <div class="slide-inner"><span class="section-label">Part VI</span><h2>Probability Calibration</h2></div>
+  </div>
+
+  <div class="slide" data-title="Prob Cal">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">07 · Probability</span><h2>Calibration Curves</h2></div>
+      <div class="slide-body">
+        <div class="math-box">\[ P(Y=1 | \hat{p}=q) \approx q \]</div>
+        <p>If you predict a 70% chance of rain, it should actually rain 70 out of 100 times you make that prediction.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="Scaling Probs">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">07 · Probability</span><h2>Platt & Temperature Scaling</h2></div>
+      <div class="slide-body">
+        <p>Methods to post-process overconfident model scores into well-calibrated probabilities.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide section-slide" data-title="Section VII">
+    <div class="slide-inner"><span class="section-label">Part VII</span><h2>Case Studies</h2></div>
+  </div>
+
+  <div class="slide" data-title="Hooke's Law">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">08 · Case Study</span><h2>Hooke's Law</h2></div>
+      <div class="slide-body">
+        <div class="math-box">\[ y = k F \]</div>
+        <p>Calibrating spring compliance $k$. Use residuals to check if the linear assumption holds at high forces.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="SIR Model">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">08 · Case Study</span><h2>SIR Epidemic Model</h2></div>
+      <div class="slide-body">
+        <div class="math-box">\[ \dot{I} = \beta SI - \gamma I \]</div>
+        <p>Target: Transmission rate $\beta$. Challenge: Data is under-reported. Solution: Document bias and report CI.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="Exercise">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">08 · Case Study</span><h2>Team Exercise: Logistic Growth</h2></div>
+      <div class="slide-body">
+        <p>Data provided: Population over time. Task: Find carrying capacity $K$ and growth rate $r$. Use 20% holdout for validation.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-title="Checklist">
+    <div class="slide-inner">
+      <div class="slide-header"><span class="section-label">09 · Conclusion</span><h2>IMMC Reporting Checklist</h2></div>
+      <div class="slide-body">
+        <div class="two-col">
+          <div class="col-block"><h3>Setup</h3><ul class="bullets"><li>Units stated</li><li>Assumptions clear</li><li>Data source cited</li></ul></div>
+          <div class="col-block"><h3>Results</h3><ul class="bullets"><li>CIs reported</li><li>Residuals plotted</li><li>Sensitivity run</li></ul></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="controls">
+  <div id="slide-counter">01 / 40</div>
+  <div style="display: flex; gap: 10px;">
+    <button class="nav-btn" id="prevBtn" onclick="navigate(-1)" disabled>PREV</button>
+    <button class="nav-btn" id="nextBtn" onclick="navigate(1)">NEXT</button>
+  </div>
+</div>
+
+<script>
+let current = 0; const slides = document.querySelectorAll('.slide'); const total = slides.length;
+function navigate(dir) {
+  const next = current + dir; if (next < 0 || next >= total) return;
+  slides[current].classList.remove('active'); slides[current].classList.add('exit');
+  const oldSlide = slides[current]; current = next;
+  slides[current].classList.add('active'); slides[current].classList.remove('exit');
+  setTimeout(() => { oldSlide.classList.remove('exit'); }, 400);
+  updateUI();
+  if (window.MathJax && window.MathJax.typesetPromise) { MathJax.typesetPromise([slides[current]]); }
+}
+function updateUI() {
+  document.getElementById('slide-counter').innerText = `${String(current + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}`;
+  document.getElementById('progress-bar').style.width = `${((current + 1) / total) * 100}%`;
+  document.getElementById('prevBtn').disabled = current === 0;
+  document.getElementById('nextBtn').disabled = current === total - 1;
+}
+document.addEventListener('keydown', e => { if (e.key === 'ArrowRight' || e.key === ' ') navigate(1); if (e.key === 'ArrowLeft') navigate(-1); });
+updateUI();
+</script>
+
+</body>
+</html>
