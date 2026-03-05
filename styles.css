@@ -31,6 +31,19 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+#global-footer {
+  position: fixed;
+  left: 14px;
+  bottom: 10px;
+  z-index: 250;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: rgba(240,236,229,0.38);
+  pointer-events: none;
+  user-select: none;
+}
+
 strong, b {
   font-family: inherit;
   font-weight: 500;
