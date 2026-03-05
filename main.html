@@ -43,7 +43,11 @@ body {
 }
 
 strong, b {
-  font-weight: 600;
+  font-family: inherit;
+  font-weight: 500;
+  letter-spacing: 0;
+  word-spacing: 0;
+  font-kerning: normal;
 }
 
 em, i {
@@ -52,8 +56,10 @@ em, i {
 }
 
 .katex {
-  font-size: 1.01em;
-  line-height: 1.1;
+  font-size: 0.98em;
+  line-height: 1;
+  color: currentColor;
+  vertical-align: -0.02em;
 }
 
 .katex-display {
@@ -69,7 +75,7 @@ li .katex,
 td .katex,
 .callout .katex,
 .note-box .katex {
-  font-size: 1em;
+  font-size: 0.98em;
 }
 
 /* ---- OUTER FRAME ---- */
@@ -2085,36 +2091,8 @@ hr.rule {
           <div class="note-box">
             <strong>IMMC sophistication.</strong> Discussing under-reporting bias and identifiability explicitly — even without resolving them — significantly strengthens a paper.
           </div>
-          <div class="logic-lab" id="sir-lab">
-            <div class="logic-head">Interactive logic lab · SIR trajectory</div>
-            <div class="logic-controls four">
-              <div class="ctrl">
-                <label for="sir-beta">β (transmission)</label>
-                <input id="sir-beta" type="range" min="0.05" max="0.9" step="0.01" value="0.28">
-                <div class="val" id="sir-beta-val">0.28</div>
-              </div>
-              <div class="ctrl">
-                <label for="sir-gamma">γ (recovery)</label>
-                <input id="sir-gamma" type="range" min="0.03" max="0.6" step="0.01" value="0.12">
-                <div class="val" id="sir-gamma-val">0.12</div>
-              </div>
-              <div class="ctrl">
-                <label for="sir-i0">Initial I₀ (%)</label>
-                <input id="sir-i0" type="range" min="0.2" max="20" step="0.1" value="2.5">
-                <div class="val" id="sir-i0-val">2.5%</div>
-              </div>
-              <div class="ctrl">
-                <label for="sir-days">Days</label>
-                <input id="sir-days" type="range" min="40" max="260" step="5" value="140">
-                <div class="val" id="sir-days-val">140</div>
-              </div>
-            </div>
-            <div class="logic-stats">
-              <span class="stat-chip" id="sir-r0">R₀=2.33</span>
-              <span class="stat-chip" id="sir-peak">Peak I=0.00%</span>
-              <span class="stat-chip" id="sir-peak-day">Peak day=0</span>
-            </div>
-            <div class="plot-wrap"><canvas class="plot-canvas" id="sir-canvas" width="620" height="170"></canvas></div>
+          <div class="callout">
+            <strong>Interactive graph moved.</strong> Use the next dedicated slide for the full SIR dynamics graph and in-graph interpretation.
           </div>
         </div>
       </div>
