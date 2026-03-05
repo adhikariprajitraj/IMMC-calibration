@@ -511,19 +511,45 @@
         ctx.strokeStyle = color;
         ctx.lineWidth = 2;
         ctx.beginPath();
+        let endX = m.x0;
+        let endY = m.y1;
         series.forEach((v, idx) => {
           const day = (idx / (series.length - 1)) * days;
           const px = xMap(m, day, 0, days);
           const py = yMap(m, v, 0, 1);
           if (idx === 0) ctx.moveTo(px, py);
           else ctx.lineTo(px, py);
+          endX = px;
+          endY = py;
         });
         ctx.stroke();
+        return { endX, endY };
       };
 
-      drawSeries(Sv, "#2f7d32");
-      drawSeries(Iv, "#a02020");
-      drawSeries(Rv, "#1f5fa8");
+      const sEnd = drawSeries(Sv, "#2f7d32");
+      const iEnd = drawSeries(Iv, "#a02020");
+      const rEnd = drawSeries(Rv, "#1f5fa8");
+
+      const drawCurveLabel = (label, color, x, y, dy = 0) => {
+        const lx = Math.min(m.x1 - 38, x + 8);
+        const ly = Math.max(m.y0 + 10, Math.min(m.y1 - 6, y + dy));
+        ctx.save();
+        ctx.font = '600 10px "JetBrains Mono", monospace';
+        const tw = ctx.measureText(label).width;
+        ctx.fillStyle = "rgba(255,255,255,0.88)";
+        ctx.strokeStyle = "rgba(18,18,18,0.14)";
+        ctx.lineWidth = 1;
+        roundRect(ctx, lx - 4, ly - 9, tw + 8, 14, 6);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = color;
+        ctx.fillText(label, lx, ly);
+        ctx.restore();
+      };
+
+      drawCurveLabel("S(t)", "#2f7d32", sEnd.endX, sEnd.endY, -2);
+      drawCurveLabel("I(t)", "#a02020", iEnd.endX, iEnd.endY, -10);
+      drawCurveLabel("R(t)", "#1f5fa8", rEnd.endX, rEnd.endY, 12);
 
       const peakI = Math.max(...I);
       const peakIdx = I.indexOf(peakI);
@@ -546,11 +572,6 @@
     bindRange("sirx-i0", (v) => `${v.toFixed(1)}%`, () => controller.restart());
     bindRange("sirx-days", (v) => String(v), () => controller.restart());
 
-    ensureLegend(canvas.closest(".plot-wrap"), [
-      { label: "S(t)", color: "#2f7d32" },
-      { label: "I(t)", color: "#a02020" },
-      { label: "R(t)", color: "#1f5fa8" },
-    ]);
 
     plotRegistry.set(canvas.id, controller);
   }

@@ -22,7 +22,7 @@
 </head>
 
 <body>
-  <button id="menu-btn" onclick="toggleMenu()">≡ slides</button>
+  <button id="menu-btn">≡ slides</button>
 
   <div id="thumb-nav">
     <div class="thumb-header">Navigation</div>
@@ -438,6 +438,21 @@
 
             <div class="callout">
               <strong>Simple rule.</strong> Start with SSE for clean data, switch to MAE when outliers are common, and use likelihood when you need full uncertainty reporting.
+            </div>
+
+            <div class="code-box">
+              <pre># Python example: compare basic calibration losses
+import numpy as np
+
+y_true = np.array([12.0, 15.5, 14.2, 18.0])
+y_pred = np.array([11.8, 16.1, 13.7, 17.0])
+r = y_true - y_pred
+
+sse = np.sum(r**2)
+mae = np.mean(np.abs(r))
+rmse = np.sqrt(np.mean(r**2))
+
+print(f"SSE={sse:.3f}, MAE={mae:.3f}, RMSE={rmse:.3f}")</pre>
             </div>
           </div>
         </div>
@@ -965,7 +980,7 @@
 
                 <div class="math-box" style="font-size: 12.5px; margin-top: 8px;">
                   \[
-                  \text{CV error} = \frac{1}{K}\sum_{k=1}^K \mathcal{L}(\hat{\theta}_{-k};\, D_k)
+                  \mathrm{CV\ Error} = \frac{1}{K}\sum_{k=1}^{K}\mathcal{L}_k
                   \]
                 </div>
               </div>
@@ -974,6 +989,17 @@
             <div class="callout">
               <strong>Leave-one-out CV (LOOCV).</strong> Special case \(K = n\). Unbiased but expensive. Appropriate when \(n\) is very small
               (e.g., epidemic data with few reported time points).
+            </div>
+
+            <div class="code-box">
+              <pre># scikit-learn example: 5-fold cross-validation
+from sklearn.model_selection import cross_val_score
+from sklearn.linear_model import Ridge
+
+model = Ridge(alpha=1.0)
+scores = cross_val_score(model, X, y, cv=5, scoring="neg_mean_squared_error")
+cv_rmse = (-scores.mean()) ** 0.5
+print(f"CV RMSE: {cv_rmse:.3f}")</pre>
             </div>
           </div>
         </div>
@@ -1285,6 +1311,16 @@
               <strong>IMMC relevance.</strong> If your model outputs probabilities (e.g., probability of exceeding a threshold),
               calibration ensures that recommendations are risk-appropriate.
             </div>
+
+            <div class="code-box">
+              <pre># scikit-learn example: probability calibration
+from sklearn.calibration import CalibratedClassifierCV
+
+base = SomeClassifier()
+cal = CalibratedClassifierCV(base, method="sigmoid", cv=5)
+cal.fit(X_train, y_train)
+p = cal.predict_proba(X_test)[:, 1]</pre>
+            </div>
           </div>
         </div>
       </div>
@@ -1316,15 +1352,30 @@
             <h2>Calibrating a Spring Model (Hooke's Law)</h2>
           </div>
           <div class="slide-body">
-            <div class="math-box">\[ y = k F \]</div>
-            <p class="lead">Where \(F\) is applied force (N) and \(y\) is extension (m). Calibrate compliance \(k\) (m/N).</p>
+            <div class="math-box">\[ y = k\,F \]</div>
+            <p class="lead">Linear spring model using compliance form: output extension \(y\) is proportional to force \(F\) through parameter \(k\).</p>
+
+            <div class="def-grid">
+              <div class="def-card">
+                <h4>\(F\) — Input</h4>
+                <p>Applied force in newtons (N). This is measured from experiment.</p>
+              </div>
+              <div class="def-card accent">
+                <h4>\(k\) — Parameter to Calibrate</h4>
+                <p>Compliance in meters per newton (m/N). This is the unknown to estimate.</p>
+              </div>
+              <div class="def-card">
+                <h4>\(y\) — Output</h4>
+                <p>Spring extension in meters (m), predicted by the model and compared with data.</p>
+              </div>
+            </div>
 
             <div class="two-col">
               <div class="col-block">
                 <h3>Procedure</h3>
                 <ol class="numbered">
                   <li>Collect pairs \((F_i, y_i)\) for several force levels.</li>
-                  <li>Fit by minimising \(\sum_i (y_i - kF_i)^2\); closed form: \(\hat{k} = \frac{\sum F_i y_i}{\sum F_i^2}\).</li>
+                  <li>Fit by minimising \(\sum_{i=1}^{n}(y_i - kF_i)^2\); closed form: \(\hat{k} = \frac{\sum_{i=1}^{n}F_i y_i}{\sum_{i=1}^{n}F_i^2}\).</li>
                   <li>Validate using forces not included in calibration.</li>
                   <li>Plot residuals \(r_i = y_i - \hat{k}F_i\) and interpret.</li>
                 </ol>
@@ -1756,9 +1807,9 @@
       <span class="slide-counter" id="slide-counter">01 / 46</span>
       <span class="section-indicator" id="section-indicator">IMMC Training · Mathematics Initiatives in Nepal</span>
       <div class="nav-buttons">
-        <button class="nav-btn" id="btn-prev" onclick="navigate(-1)" disabled>← prev</button>
+        <button class="nav-btn" id="btn-prev" disabled>← prev</button>
         <span class="key-hint">arrow keys</span>
-        <button class="nav-btn" id="btn-next" onclick="navigate(1)">next →</button>
+        <button class="nav-btn" id="btn-next">next →</button>
       </div>
     </div>
   </div>

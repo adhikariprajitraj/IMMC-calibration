@@ -463,6 +463,23 @@ ol.numbered li strong { color: var(--ink); font-weight: 600; }
 }
 .note-box strong { color: var(--ink-mid); font-weight: 600; font-style: normal; }
 
+/* ---- CODE EXAMPLE BOX ---- */
+.code-box {
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-left: 2px solid var(--accent);
+  padding: 10px 12px;
+  overflow: auto;
+}
+.code-box pre {
+  margin: 0;
+  color: #e8e8e8;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  line-height: 1.5;
+  white-space: pre;
+}
+
 /* ---- TWO COLUMN ---- */
 .two-col {
   display: grid;
@@ -813,6 +830,7 @@ hr.rule {
   color: var(--ink-light);
 }
 .plot-wrap {
+  position: relative;
   background: var(--paper);
   border: 1px solid var(--rule-light);
   padding: 6px;
