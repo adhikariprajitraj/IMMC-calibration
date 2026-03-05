@@ -6,24 +6,9 @@
 <title>Model Calibration — IMMC Training</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<script>
-  window.MathJax = {
-    tex: {
-      inlineMath: [['$', '$'], ['\\(', '\\)']],
-      displayMath: [['$$', '$$'], ['\\[', '\\]']],
-      processEscapes: true
-    },
-    options: {
-      renderActions: {
-        addMenu: []
-      }
-    },
-    startup: {
-      typeset: true
-    }
-  };
-</script>
-<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <style>
 :root {
   --ink:        #121212;
@@ -49,6 +34,42 @@ html, body {
   font-family: 'EB Garamond', Georgia, serif;
   overflow: hidden;
   font-size: 17px;
+}
+
+body {
+  line-height: 1.55;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+strong, b {
+  font-weight: 600;
+}
+
+em, i {
+  font-style: italic;
+  font-weight: 400;
+}
+
+.katex {
+  font-size: 1.01em;
+  line-height: 1.1;
+}
+
+.katex-display {
+  margin: 0.28em 0;
+}
+
+.math-box .katex-display {
+  margin: 0.2em 0;
+}
+
+p .katex,
+li .katex,
+td .katex,
+.callout .katex,
+.note-box .katex {
+  font-size: 1em;
 }
 
 /* ---- OUTER FRAME ---- */
@@ -371,7 +392,7 @@ ul.bullets li strong {
   font-weight: 600;
 }
 ul.bullets li em {
-  color: var(--ink-light);
+  color: inherit;
   font-style: italic;
 }
 
@@ -1434,33 +1455,47 @@ hr.rule {
           <div class="callout">
             Think of the loss surface as hilly terrain — gradient descent always walks downhill, but may end up in a valley that is not the global minimum.
           </div>
-          <div class="logic-lab" id="gd-lab">
-            <div class="logic-head">Interactive logic lab · gradient descent path</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 18A GD ANIMATION LAB -->
+    <div class="slide" data-title="Animated Gradient Descent Graph">
+      <div class="slide-inner">
+        <div class="slide-num-corner">18A</div>
+        <div class="slide-header">
+          <div class="section-label">Optimisation · Interactive</div>
+          <h2>Animated Graph — Gradient Descent Step-by-Step</h2>
+        </div>
+        <div class="slide-body">
+          <p class="lead">Use controls and watch the descent path animate; the plot annotation explains whether updates are converging smoothly or oscillating.</p>
+          <div class="logic-lab" id="gdx-lab">
+            <div class="logic-head">Animated logic lab · gradient descent trajectory</div>
             <div class="logic-controls">
               <div class="ctrl">
-                <label for="gd-eta">Learning rate η</label>
-                <input id="gd-eta" type="range" min="0.02" max="0.9" step="0.01" value="0.22">
-                <div class="val" id="gd-eta-val">0.22</div>
+                <label for="gdx-eta">Learning rate η</label>
+                <input id="gdx-eta" type="range" min="0.02" max="0.9" step="0.01" value="0.22">
+                <div class="val" id="gdx-eta-val">0.22</div>
               </div>
               <div class="ctrl">
-                <label for="gd-start">Start θ₀</label>
-                <input id="gd-start" type="range" min="-4" max="10" step="0.1" value="8.2">
-                <div class="val" id="gd-start-val">8.2</div>
+                <label for="gdx-start">Start θ₀</label>
+                <input id="gdx-start" type="range" min="-4" max="10" step="0.1" value="8.2">
+                <div class="val" id="gdx-start-val">8.2</div>
               </div>
               <div class="ctrl">
-                <label for="gd-steps">Iterations</label>
-                <input id="gd-steps" type="range" min="3" max="40" step="1" value="14">
-                <div class="val" id="gd-steps-val">14</div>
+                <label for="gdx-steps">Iterations</label>
+                <input id="gdx-steps" type="range" min="3" max="40" step="1" value="14">
+                <div class="val" id="gdx-steps-val">14</div>
               </div>
             </div>
             <div class="logic-actions">
-              <button class="logic-btn" id="gd-reset">Reset</button>
+              <button class="logic-btn" id="gdx-reset">Reset</button>
               <div class="logic-stats">
-                <span class="stat-chip" id="gd-loss">L(θ)=0.000</span>
-                <span class="stat-chip" id="gd-theta">θ*=0.000</span>
+                <span class="stat-chip" id="gdx-loss">L(θ)=0.000</span>
+                <span class="stat-chip" id="gdx-theta">θ*=0.000</span>
               </div>
             </div>
-            <div class="plot-wrap"><canvas class="plot-canvas" id="gd-canvas" width="620" height="170"></canvas></div>
+            <div class="plot-wrap"><canvas class="plot-canvas" id="gdx-canvas" width="620" height="170"></canvas></div>
           </div>
         </div>
       </div>
@@ -2085,6 +2120,51 @@ hr.rule {
       </div>
     </div>
 
+    <!-- 38A SIR ANIMATION LAB -->
+    <div class="slide" data-title="Animated SIR Dynamics Graph">
+      <div class="slide-inner">
+        <div class="slide-num-corner">38A</div>
+        <div class="slide-header">
+          <div class="section-label">Case Study B · Interactive</div>
+          <h2>Animated Graph — SIR Dynamics Explained</h2>
+        </div>
+        <div class="slide-body">
+          <p class="lead">Play with \(\beta\), \(\gamma\), and \(I_0\). The annotation inside the graph explains why infection rises and when it starts to fall.</p>
+          <div class="logic-lab" id="sirx-lab">
+            <div class="logic-head">Animated logic lab · SIR trajectories</div>
+            <div class="logic-controls four">
+              <div class="ctrl">
+                <label for="sirx-beta">β (transmission)</label>
+                <input id="sirx-beta" type="range" min="0.05" max="0.9" step="0.01" value="0.28">
+                <div class="val" id="sirx-beta-val">0.28</div>
+              </div>
+              <div class="ctrl">
+                <label for="sirx-gamma">γ (recovery)</label>
+                <input id="sirx-gamma" type="range" min="0.03" max="0.6" step="0.01" value="0.12">
+                <div class="val" id="sirx-gamma-val">0.12</div>
+              </div>
+              <div class="ctrl">
+                <label for="sirx-i0">Initial I₀ (%)</label>
+                <input id="sirx-i0" type="range" min="0.2" max="20" step="0.1" value="2.5">
+                <div class="val" id="sirx-i0-val">2.5%</div>
+              </div>
+              <div class="ctrl">
+                <label for="sirx-days">Days</label>
+                <input id="sirx-days" type="range" min="40" max="260" step="5" value="140">
+                <div class="val" id="sirx-days-val">140</div>
+              </div>
+            </div>
+            <div class="logic-stats">
+              <span class="stat-chip" id="sirx-r0">R₀=2.33</span>
+              <span class="stat-chip" id="sirx-peak">Peak I=0.00%</span>
+              <span class="stat-chip" id="sirx-peak-day">Peak day=0</span>
+            </div>
+            <div class="plot-wrap"><canvas class="plot-canvas" id="sirx-canvas" width="620" height="170"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 39 LOGISTIC -->
     <div class="slide" data-title="Team Exercise: Logistic Growth">
       <div class="slide-inner">
@@ -2118,30 +2198,47 @@ hr.rule {
               </ul>
             </div>
           </div>
-          <div class="logic-lab" id="logistic-lab">
-            <div class="logic-head">Interactive logic lab · logistic fit explorer</div>
+          <div class="callout">
+            <strong>Interactive graph moved.</strong> Use the next dedicated slide for the full animated logistic calibration graph and in-graph interpretation.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 39A LOGISTIC ANIMATION LAB -->
+    <div class="slide" data-title="Animated Logistic Fit Graph">
+      <div class="slide-inner">
+        <div class="slide-num-corner">39A</div>
+        <div class="slide-header">
+          <div class="section-label">Team Exercise · Interactive</div>
+          <h2>Animated Graph — Logistic Fit and Interpretation</h2>
+        </div>
+        <div class="slide-body">
+          <p class="lead">Adjust \(K, A, r\) and observe the model curve animate against observed points; the graph text explains fit quality and inflection meaning.</p>
+          <div class="logic-lab" id="logx-lab">
+            <div class="logic-head">Animated logic lab · logistic fit</div>
             <div class="logic-controls">
               <div class="ctrl">
-                <label for="log-k">K (capacity)</label>
-                <input id="log-k" type="range" min="50" max="170" step="1" value="105">
-                <div class="val" id="log-k-val">105</div>
+                <label for="logx-k">K (capacity)</label>
+                <input id="logx-k" type="range" min="50" max="170" step="1" value="105">
+                <div class="val" id="logx-k-val">105</div>
               </div>
               <div class="ctrl">
-                <label for="log-a">A (initial factor)</label>
-                <input id="log-a" type="range" min="2" max="30" step="0.5" value="12">
-                <div class="val" id="log-a-val">12.0</div>
+                <label for="logx-a">A (initial factor)</label>
+                <input id="logx-a" type="range" min="2" max="30" step="0.5" value="12">
+                <div class="val" id="logx-a-val">12.0</div>
               </div>
               <div class="ctrl">
-                <label for="log-r">r (growth rate)</label>
-                <input id="log-r" type="range" min="0.04" max="0.45" step="0.01" value="0.18">
-                <div class="val" id="log-r-val">0.18</div>
+                <label for="logx-r">r (growth rate)</label>
+                <input id="logx-r" type="range" min="0.04" max="0.45" step="0.01" value="0.18">
+                <div class="val" id="logx-r-val">0.18</div>
               </div>
             </div>
             <div class="logic-stats">
-              <span class="stat-chip" id="log-rmse">RMSE=0.000</span>
-              <span class="stat-chip" id="log-mid">Inflection t*=0.0</span>
+              <span class="stat-chip" id="logx-rmse">RMSE=0.000</span>
+              <span class="stat-chip" id="logx-mid">Inflection t*=0.0</span>
             </div>
-            <div class="plot-wrap"><canvas class="plot-canvas" id="log-canvas" width="620" height="170"></canvas></div>
+            <div class="plot-wrap"><canvas class="plot-canvas" id="logx-canvas" width="620" height="170"></canvas></div>
           </div>
         </div>
       </div>
@@ -2203,7 +2300,7 @@ hr.rule {
   </div><!-- /stage -->
 
   <div id="controls">
-    <span class="slide-counter" id="slide-counter">01 / 40</span>
+    <span class="slide-counter" id="slide-counter">01 / 43</span>
     <span class="section-indicator" id="section-indicator">IMMC Training · Mathematics Initiatives in Nepal</span>
     <div class="nav-buttons">
       <button class="nav-btn" id="btn-prev" onclick="navigate(-1)" disabled>← prev</button>
@@ -2238,28 +2335,31 @@ const sectionMap = {
   15: '§ III — Optimisation',
   16: 'Optimisation',
   17: 'Optimisation',
-  18: 'Optimisation',
+  18: 'Optimisation · Interactive Graph',
   19: 'Optimisation',
   20: 'Optimisation',
-  21: '§ IV — Diagnostics & Validation',
-  22: 'Diagnostics & Validation',
+  21: 'Optimisation',
+  22: '§ IV — Diagnostics & Validation',
   23: 'Diagnostics & Validation',
   24: 'Diagnostics & Validation',
   25: 'Diagnostics & Validation',
   26: 'Diagnostics & Validation',
-  27: '§ V — Uncertainty Quantification',
-  28: 'Uncertainty Quantification',
+  27: 'Diagnostics & Validation',
+  28: '§ V — Uncertainty Quantification',
   29: 'Uncertainty Quantification',
   30: 'Uncertainty Quantification',
   31: 'Uncertainty Quantification',
-  32: '§ VI — Probability Calibration',
-  33: 'Probability Calibration',
+  32: 'Uncertainty Quantification',
+  33: '§ VI — Probability Calibration',
   34: 'Probability Calibration',
-  35: '§ VII — Case Studies',
-  36: 'Case Study A',
-  37: 'Case Study B',
-  38: 'Team Exercise',
-  39: 'Section VIII — Reporting Checklist',
+  35: 'Probability Calibration',
+  36: '§ VII — Case Studies',
+  37: 'Case Study A',
+  38: 'Case Study B',
+  39: 'Case Study B · Interactive Graph',
+  40: 'Team Exercise',
+  41: 'Team Exercise · Interactive Graph',
+  42: 'Section VIII — Reporting Checklist',
 };
 
 function navigate(dir) {
@@ -2274,7 +2374,7 @@ function navigate(dir) {
     current = next;
     slides[current].classList.add('active');
     updateUI();
-    MathJax.typesetPromise && MathJax.typesetPromise([slides[current]]).catch(() => {});
+    renderMath(slides[current]);
     isAnimating = false;
   }, 180);
 }
@@ -2289,7 +2389,7 @@ function goTo(idx) {
     current = idx;
     slides[current].classList.add('active');
     updateUI();
-    MathJax.typesetPromise && MathJax.typesetPromise([slides[current]]).catch(() => {});
+    renderMath(slides[current]);
     isAnimating = false;
   }, 180);
 }
@@ -2328,7 +2428,25 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') toggleMenu(false);
 });
 
-document.getElementById('progress-bar').style.width = (1 / total * 100) + '%';
+updateUI();
+
+function renderMath(root = document.body) {
+  if (!window.renderMathInElement) return;
+  renderMathInElement(root, {
+    delimiters: [
+      { left: '$$', right: '$$', display: true },
+      { left: '\\[', right: '\\]', display: true },
+      { left: '$', right: '$', display: false },
+      { left: '\\(', right: '\\)', display: false }
+    ],
+    throwOnError: false,
+    strict: 'ignore'
+  });
+}
+
+window.addEventListener('load', () => {
+  renderMath(document.body);
+});
 
 function plotFrame(ctx, width, height) {
   ctx.clearRect(0, 0, width, height);
@@ -2363,18 +2481,59 @@ function bindRange(id, format, onChange) {
   update();
 }
 
-function initGradientDescentLab() {
-  const canvas = document.getElementById('gd-canvas');
+function drawGraphNote(ctx, title, text, width) {
+  const boxW = 285;
+  const x = width - boxW - 12;
+  const y = 12;
+  ctx.fillStyle = 'rgba(255,255,255,0.93)';
+  ctx.strokeStyle = '#d6d6d6';
+  ctx.lineWidth = 1;
+  ctx.fillRect(x, y, boxW, 48);
+  ctx.strokeRect(x, y, boxW, 48);
+  ctx.fillStyle = '#8f1d1d';
+  ctx.font = '600 10px JetBrains Mono';
+  ctx.fillText(title, x + 8, y + 14);
+  ctx.fillStyle = '#333';
+  ctx.font = '12px EB Garamond';
+  ctx.fillText(text, x + 8, y + 33);
+}
+
+function makeAnimator(draw) {
+  let progress = 0;
+  let raf = 0;
+  const tick = () => {
+    progress = Math.min(1, progress + 0.055);
+    draw(progress);
+    if (progress < 1) {
+      raf = requestAnimationFrame(tick);
+    } else {
+      raf = 0;
+    }
+  };
+  return {
+    restart() {
+      progress = 0;
+      if (!raf) tick();
+    },
+    drawFull() {
+      progress = 1;
+      draw(1);
+    }
+  };
+}
+
+function initGradientDescentLab(cfg) {
+  const canvas = document.getElementById(cfg.canvas);
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const etaInput = document.getElementById('gd-eta');
-  const startInput = document.getElementById('gd-start');
-  const stepsInput = document.getElementById('gd-steps');
-  const lossOut = document.getElementById('gd-loss');
-  const thetaOut = document.getElementById('gd-theta');
-  const resetBtn = document.getElementById('gd-reset');
+  const etaInput = document.getElementById(cfg.eta);
+  const startInput = document.getElementById(cfg.start);
+  const stepsInput = document.getElementById(cfg.steps);
+  const lossOut = document.getElementById(cfg.loss);
+  const thetaOut = document.getElementById(cfg.theta);
+  const resetBtn = document.getElementById(cfg.reset);
 
-  function run() {
+  function run(progress = 1) {
     const width = canvas.width;
     const height = canvas.height;
     const eta = Number(etaInput.value);
@@ -2407,11 +2566,14 @@ function initGradientDescentLab() {
       path.push(t - eta * grad);
     }
 
+    const visibleCount = Math.max(2, Math.floor(path.length * progress));
+    const visiblePath = path.slice(0, visibleCount);
+
     ctx.strokeStyle = '#333';
     ctx.fillStyle = '#121212';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    path.forEach((theta, i) => {
+    visiblePath.forEach((theta, i) => {
       const loss = (theta - optimum) * (theta - optimum);
       const cx = 30 + ((theta - xMin) / (xMax - xMin)) * 560;
       const cy = (height - 20) - (loss / yMax) * (height - 32);
@@ -2420,7 +2582,7 @@ function initGradientDescentLab() {
     });
     ctx.stroke();
 
-    path.forEach((theta) => {
+    visiblePath.forEach((theta) => {
       const loss = (theta - optimum) * (theta - optimum);
       const cx = 30 + ((theta - xMin) / (xMax - xMin)) * 560;
       const cy = (height - 20) - (loss / yMax) * (height - 32);
@@ -2433,35 +2595,41 @@ function initGradientDescentLab() {
     const finalLoss = (finalTheta - optimum) * (finalTheta - optimum);
     lossOut.textContent = `L(θ)=${finalLoss.toFixed(4)}`;
     thetaOut.textContent = `θ*=${finalTheta.toFixed(3)}`;
+
+    const note = eta > 0.55
+      ? 'Large η causes jumps; watch for oscillation around the minimum.'
+      : 'Updates move downhill and settle near the parabola minimum.';
+    drawGraphNote(ctx, 'WHAT HAPPENS', note, width);
   }
 
-  bindRange('gd-eta', (v) => v.toFixed(2), run);
-  bindRange('gd-start', (v) => v.toFixed(1), run);
-  bindRange('gd-steps', (v) => String(v), run);
+  const animator = makeAnimator(run);
+  bindRange(cfg.eta, (v) => v.toFixed(2), () => animator.restart());
+  bindRange(cfg.start, (v) => v.toFixed(1), () => animator.restart());
+  bindRange(cfg.steps, (v) => String(v), () => animator.restart());
   if (resetBtn) {
     resetBtn.addEventListener('click', () => {
       etaInput.value = '0.22';
       startInput.value = '8.2';
       stepsInput.value = '14';
-      document.getElementById('gd-eta-val').textContent = '0.22';
-      document.getElementById('gd-start-val').textContent = '8.2';
-      document.getElementById('gd-steps-val').textContent = '14';
-      run();
+      document.getElementById(`${cfg.eta}-val`).textContent = '0.22';
+      document.getElementById(`${cfg.start}-val`).textContent = '8.2';
+      document.getElementById(`${cfg.steps}-val`).textContent = '14';
+      animator.restart();
     });
   }
-  run();
+  animator.restart();
 }
 
-function initSirLab() {
-  const canvas = document.getElementById('sir-canvas');
+function initSirLab(cfg) {
+  const canvas = document.getElementById(cfg.canvas);
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const betaInput = document.getElementById('sir-beta');
-  const gammaInput = document.getElementById('sir-gamma');
-  const i0Input = document.getElementById('sir-i0');
-  const daysInput = document.getElementById('sir-days');
+  const betaInput = document.getElementById(cfg.beta);
+  const gammaInput = document.getElementById(cfg.gamma);
+  const i0Input = document.getElementById(cfg.i0);
+  const daysInput = document.getElementById(cfg.days);
 
-  function run() {
+  function run(progress = 1) {
     const width = canvas.width;
     const height = canvas.height;
     const beta = Number(betaInput.value);
@@ -2493,6 +2661,11 @@ function initSirLab() {
 
     plotFrame(ctx, width, height);
 
+    const visibleCount = Math.max(2, Math.floor(S.length * progress));
+    const Sv = S.slice(0, visibleCount);
+    const Iv = I.slice(0, visibleCount);
+    const Rv = R.slice(0, visibleCount);
+
     function drawSeries(data, color) {
       ctx.strokeStyle = color;
       ctx.lineWidth = 2;
@@ -2506,33 +2679,38 @@ function initSirLab() {
       ctx.stroke();
     }
 
-    drawSeries(S, '#2f7d32');
-    drawSeries(I, '#a02020');
-    drawSeries(R, '#1f5fa8');
+    drawSeries(Sv, '#2f7d32');
+    drawSeries(Iv, '#a02020');
+    drawSeries(Rv, '#1f5fa8');
 
     const peakI = Math.max(...I);
     const peakIdx = I.indexOf(peakI);
     const peakDay = peakIdx * dt;
     const r0 = gamma > 0 ? beta / gamma : 0;
-    document.getElementById('sir-r0').textContent = `R₀=${r0.toFixed(2)}`;
-    document.getElementById('sir-peak').textContent = `Peak I=${(peakI * 100).toFixed(1)}%`;
-    document.getElementById('sir-peak-day').textContent = `Peak day=${peakDay.toFixed(1)}`;
+    document.getElementById(cfg.r0).textContent = `R₀=${r0.toFixed(2)}`;
+    document.getElementById(cfg.peak).textContent = `Peak I=${(peakI * 100).toFixed(1)}%`;
+    document.getElementById(cfg.peakDay).textContent = `Peak day=${peakDay.toFixed(1)}`;
+
+    const currentIdx = Math.max(1, visibleCount - 1);
+    const trend = Iv[currentIdx] > Iv[Math.max(0, currentIdx - 1)] ? 'rising' : 'falling';
+    drawGraphNote(ctx, 'WHAT HAPPENS', `I(t) is ${trend}; decline starts after susceptible pool drops.`, width);
   }
 
-  bindRange('sir-beta', (v) => v.toFixed(2), run);
-  bindRange('sir-gamma', (v) => v.toFixed(2), run);
-  bindRange('sir-i0', (v) => `${v.toFixed(1)}%`, run);
-  bindRange('sir-days', (v) => String(v), run);
-  run();
+  const animator = makeAnimator(run);
+  bindRange(cfg.beta, (v) => v.toFixed(2), () => animator.restart());
+  bindRange(cfg.gamma, (v) => v.toFixed(2), () => animator.restart());
+  bindRange(cfg.i0, (v) => `${v.toFixed(1)}%`, () => animator.restart());
+  bindRange(cfg.days, (v) => String(v), () => animator.restart());
+  animator.restart();
 }
 
-function initLogisticLab() {
-  const canvas = document.getElementById('log-canvas');
+function initLogisticLab(cfg) {
+  const canvas = document.getElementById(cfg.canvas);
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const kInput = document.getElementById('log-k');
-  const aInput = document.getElementById('log-a');
-  const rInput = document.getElementById('log-r');
+  const kInput = document.getElementById(cfg.k);
+  const aInput = document.getElementById(cfg.a);
+  const rInput = document.getElementById(cfg.r);
   const obs = [8, 11, 14, 19, 28, 36, 48, 59, 69, 76, 84, 89, 92, 96, 97, 99];
   const tVals = obs.map((_, idx) => idx * 2);
 
@@ -2540,7 +2718,7 @@ function initLogisticLab() {
     return K / (1 + A * Math.exp(-r * t));
   }
 
-  function run() {
+  function run(progress = 1) {
     const width = canvas.width;
     const height = canvas.height;
     const K = Number(kInput.value);
@@ -2572,7 +2750,8 @@ function initLogisticLab() {
     ctx.strokeStyle = '#a02020';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    for (let j = 0; j <= 220; j++) {
+    const maxJ = Math.max(2, Math.floor(220 * progress));
+    for (let j = 0; j <= maxJ; j++) {
       const t = (j / 220) * maxT;
       const v = model(t, K, A, r);
       const x = 30 + (t / maxT) * 560;
@@ -2582,19 +2761,37 @@ function initLogisticLab() {
     }
     ctx.stroke();
 
-    document.getElementById('log-rmse').textContent = `RMSE=${rmse.toFixed(2)}`;
-    document.getElementById('log-mid').textContent = `Inflection t*=${inflection.toFixed(1)}`;
+    document.getElementById(cfg.rmse).textContent = `RMSE=${rmse.toFixed(2)}`;
+    document.getElementById(cfg.mid).textContent = `Inflection t*=${inflection.toFixed(1)}`;
+
+    const fitText = rmse < 6 ? 'Curve follows points well; fit error is low.' : 'Gap to points is visible; tune parameters to improve fit.';
+    drawGraphNote(ctx, 'WHAT HAPPENS', fitText, width);
   }
 
-  bindRange('log-k', (v) => String(v.toFixed(0)), run);
-  bindRange('log-a', (v) => v.toFixed(1), run);
-  bindRange('log-r', (v) => v.toFixed(2), run);
-  run();
+  const animator = makeAnimator(run);
+  bindRange(cfg.k, (v) => String(v.toFixed(0)), () => animator.restart());
+  bindRange(cfg.a, (v) => v.toFixed(1), () => animator.restart());
+  bindRange(cfg.r, (v) => v.toFixed(2), () => animator.restart());
+  animator.restart();
 }
 
-initGradientDescentLab();
-initSirLab();
-initLogisticLab();
+initGradientDescentLab({
+  eta: 'gdx-eta', start: 'gdx-start', steps: 'gdx-steps',
+  loss: 'gdx-loss', theta: 'gdx-theta', reset: 'gdx-reset', canvas: 'gdx-canvas'
+});
+
+initSirLab({
+  beta: 'sir-beta', gamma: 'sir-gamma', i0: 'sir-i0', days: 'sir-days',
+  r0: 'sir-r0', peak: 'sir-peak', peakDay: 'sir-peak-day', canvas: 'sir-canvas'
+});
+initSirLab({
+  beta: 'sirx-beta', gamma: 'sirx-gamma', i0: 'sirx-i0', days: 'sirx-days',
+  r0: 'sirx-r0', peak: 'sirx-peak', peakDay: 'sirx-peak-day', canvas: 'sirx-canvas'
+});
+
+initLogisticLab({
+  k: 'logx-k', a: 'logx-a', r: 'logx-r', rmse: 'logx-rmse', mid: 'logx-mid', canvas: 'logx-canvas'
+});
 </script>
 </body>
 </html>
