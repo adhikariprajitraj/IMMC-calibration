@@ -48,7 +48,7 @@ html, body {
   color: var(--ink);
   font-family: 'EB Garamond', Georgia, serif;
   overflow: hidden;
-  font-size: 16px;
+  font-size: 17px;
 }
 
 /* ---- OUTER FRAME ---- */
@@ -270,7 +270,7 @@ html, body {
 .section-slide .slide-inner {
   justify-content: center;
   align-items: flex-start;
-  background: var(--ink);
+  background: linear-gradient(135deg, #303030 0%, #242424 100%);
   color: var(--paper);
   position: relative;
   overflow: hidden;
@@ -290,7 +290,7 @@ html, body {
 .section-num-bg {
   font-family: 'Cormorant Garamond', serif;
   font-size: min(30vw, 220px);
-  color: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.08);
   line-height: 1;
   position: absolute;
   right: 40px; bottom: 20px;
@@ -317,11 +317,29 @@ html, body {
 }
 .section-content .section-sub {
   font-size: 13.5px;
-  color: rgba(240,236,229,0.45);
+  color: rgba(255,255,255,0.72);
   font-style: italic;
   line-height: 1.6;
   max-width: 460px;
   font-family: 'EB Garamond', serif;
+}
+.section-focus {
+  margin-top: 18px;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 680px;
+}
+.section-focus li {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.86);
+  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(255,255,255,0.06);
+  padding: 5px 8px;
 }
 
 /* ---- BULLETS ---- */
@@ -996,6 +1014,11 @@ hr.rule {
           <span class="sec-label">Section I</span>
           <h2>Core Concepts</h2>
           <p class="section-sub">Model structure · Parameters · States · Sources of error</p>
+          <ul class="section-focus">
+            <li>Define model pieces</li>
+            <li>Separate calibration vs validation</li>
+            <li>Interpret data error correctly</li>
+          </ul>
         </div>
         <div class="section-num-bg">I</div>
       </div>
@@ -1153,6 +1176,11 @@ hr.rule {
           <span class="sec-label">Section II</span>
           <h2>Deterministic Calibration</h2>
           <p class="section-sub">Least Squares · Likelihood · Loss Functions · Identifiability</p>
+          <ul class="section-focus">
+            <li>Select a defendable loss</li>
+            <li>Apply weights and constraints</li>
+            <li>Check identifiability early</li>
+          </ul>
         </div>
         <div class="section-num-bg">II</div>
       </div>
@@ -1336,6 +1364,11 @@ hr.rule {
           <span class="sec-label">Section III</span>
           <h2>Optimisation</h2>
           <p class="section-sub">Gradient methods · Local minima · Gauss–Newton / LM · Scaling</p>
+          <ul class="section-focus">
+            <li>Choose solver intentionally</li>
+            <li>Use multi-start for robustness</li>
+            <li>Fix scaling before fitting</li>
+          </ul>
         </div>
         <div class="section-num-bg">III</div>
       </div>
@@ -1534,6 +1567,11 @@ hr.rule {
           <span class="sec-label">Section IV</span>
           <h2>Diagnostics &amp; Validation</h2>
           <p class="section-sub">Residual patterns · Overfitting · Cross-validation · Time series</p>
+          <ul class="section-focus">
+            <li>Read residual shapes</li>
+            <li>Protect test data integrity</li>
+            <li>Use time-aware validation</li>
+          </ul>
         </div>
         <div class="section-num-bg">IV</div>
       </div>
@@ -1708,6 +1746,11 @@ hr.rule {
           <span class="sec-label">Section V</span>
           <h2>Uncertainty Quantification</h2>
           <p class="section-sub">Bootstrap · Confidence intervals · Bayesian calibration · MCMC</p>
+          <ul class="section-focus">
+            <li>Report interval estimates</li>
+            <li>Compare bootstrap vs bayesian</li>
+            <li>Communicate uncertainty clearly</li>
+          </ul>
         </div>
         <div class="section-num-bg">V</div>
       </div>
@@ -1844,6 +1887,11 @@ hr.rule {
           <span class="sec-label">Section VI</span>
           <h2>Probability Calibration</h2>
           <p class="section-sub">Reliability diagrams · Brier score · Platt scaling · Temperature scaling</p>
+          <ul class="section-focus">
+            <li>Check confidence realism</li>
+            <li>Use held-out calibration set</li>
+            <li>Track ECE and log loss</li>
+          </ul>
         </div>
         <div class="section-num-bg">VI</div>
       </div>
@@ -1922,6 +1970,11 @@ hr.rule {
           <span class="sec-label">Section VII</span>
           <h2>IMMC Case Studies &amp; Exercises</h2>
           <p class="section-sub">Spring model · SIR epidemic model · Logistic growth · Team practice</p>
+          <ul class="section-focus">
+            <li>Work through full calibration loop</li>
+            <li>Defend assumptions with evidence</li>
+            <li>Prepare competition-ready writeup</li>
+          </ul>
         </div>
         <div class="section-num-bg">VII</div>
       </div>
