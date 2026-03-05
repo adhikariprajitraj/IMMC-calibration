@@ -2,7 +2,7 @@
 name: Deploy main.html to GitHub Pages
 
 on:
-  # Runs on pushes targeting the default branch
+  # Runs on pushes to the test branch
   push:
     branches: ["test"]
 
