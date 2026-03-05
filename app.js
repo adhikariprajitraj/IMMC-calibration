@@ -134,16 +134,19 @@
   // -----------------------------
   function prepCanvas(canvas, ctx) {
     const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const root = getComputedStyle(document.documentElement);
+    const deckScale = Number.parseFloat(root.getPropertyValue("--deck-scale")) || 1;
+    const pixelRatio = dpr * deckScale;
     const cssW = Math.max(1, canvas.clientWidth);
     const cssH = Math.max(1, canvas.clientHeight);
 
-    const need = canvas.width !== Math.round(cssW * dpr) || canvas.height !== Math.round(cssH * dpr);
+    const need = canvas.width !== Math.round(cssW * pixelRatio) || canvas.height !== Math.round(cssH * pixelRatio);
     if (need) {
-      canvas.width = Math.round(cssW * dpr);
-      canvas.height = Math.round(cssH * dpr);
+      canvas.width = Math.round(cssW * pixelRatio);
+      canvas.height = Math.round(cssH * pixelRatio);
     }
 
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
     ctx.imageSmoothingEnabled = true;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -242,7 +245,7 @@
   function drawNote(ctx, m, title, text) {
     const boxW = Math.min(360, Math.max(240, Math.round(m.w * 0.50)));
     const boxH = 62;
-    const x = m.w - boxW - 18;
+    const x = m.x0 + Math.max(12, (m.plotW - boxW) * 0.58);
     const y = 18;
 
     ctx.save();
@@ -330,6 +333,307 @@
       stop() { if (raf) cancelAnimationFrame(raf); raf = 0; t0 = 0; },
       drawFull() { draw(0); },
     };
+  }
+
+  function bindRange(id, format, onChange) {
+    const input = $(id);
+    const out = $(`${id}-val`);
+    if (!input || !out) return;
+
+    const update = () => {
+      out.textContent = format(Number(input.value));
+      onChange?.();
+    };
+
+    input.addEventListener("input", update);
+    update();
+  }
+
+  function initGradientDescentLab() {
+    const canvas = $("gdx-canvas");
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    const etaInput = $("gdx-eta");
+    const startInput = $("gdx-start");
+    const stepsInput = $("gdx-steps");
+    const lossOut = $("gdx-loss");
+    const thetaOut = $("gdx-theta");
+    const resetBtn = $("gdx-reset");
+
+    if (!etaInput || !startInput || !stepsInput) return;
+
+    const optimum = 3;
+    const xMin = -4;
+    const xMax = 10;
+    const yMax = 52;
+
+    const draw = (progress = 1) => {
+      const m = prepCanvas(canvas, ctx);
+      plotFrame(ctx, m, { xTicks: 5, yTicks: 4, xLabel: "θ", yLabel: "L(θ)" });
+
+      const eta = Number(etaInput.value);
+      const start = Number(startInput.value);
+      const steps = Number(stepsInput.value);
+
+      ctx.strokeStyle = "#a02020";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i <= 300; i++) {
+        const x = xMin + (i / 300) * (xMax - xMin);
+        const y = (x - optimum) * (x - optimum);
+        const px = xMap(m, x, xMin, xMax);
+        const py = yMap(m, y, 0, yMax);
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      const path = [start];
+      for (let i = 0; i < steps; i++) {
+        const t = path[path.length - 1];
+        const grad = 2 * (t - optimum);
+        path.push(t - eta * grad);
+      }
+
+      const visibleCount = Math.max(2, Math.floor(path.length * progress));
+      const visiblePath = path.slice(0, visibleCount);
+
+      ctx.strokeStyle = "#222";
+      ctx.lineWidth = 1.7;
+      ctx.beginPath();
+      visiblePath.forEach((theta, idx) => {
+        const y = (theta - optimum) * (theta - optimum);
+        const px = xMap(m, theta, xMin, xMax);
+        const py = yMap(m, y, 0, yMax);
+        if (idx === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+
+      ctx.fillStyle = "#111";
+      visiblePath.forEach((theta) => {
+        const y = (theta - optimum) * (theta - optimum);
+        const px = xMap(m, theta, xMin, xMax);
+        const py = yMap(m, y, 0, yMax);
+        ctx.beginPath();
+        ctx.arc(px, py, 2.8, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      const finalTheta = path[path.length - 1];
+      const finalLoss = (finalTheta - optimum) * (finalTheta - optimum);
+      if (lossOut) lossOut.textContent = `L(θ)=${finalLoss.toFixed(4)}`;
+      if (thetaOut) thetaOut.textContent = `θ*=${finalTheta.toFixed(3)}`;
+
+      const note = eta > 0.55
+        ? "Large η can overshoot and oscillate around the minimum."
+        : "Updates move downhill and settle near the parabola minimum.";
+      drawNote(ctx, m, "WHAT YOU'RE SEEING", note);
+    };
+
+    const controller = makeOneShot(draw, { speed: 0.055 });
+
+    bindRange("gdx-eta", (v) => v.toFixed(2), () => controller.restart());
+    bindRange("gdx-start", (v) => v.toFixed(1), () => controller.restart());
+    bindRange("gdx-steps", (v) => String(v), () => controller.restart());
+
+    if (resetBtn) {
+      resetBtn.addEventListener("click", () => {
+        etaInput.value = "0.22";
+        startInput.value = "8.2";
+        stepsInput.value = "14";
+        $("gdx-eta-val").textContent = "0.22";
+        $("gdx-start-val").textContent = "8.2";
+        $("gdx-steps-val").textContent = "14";
+        controller.restart();
+      });
+    }
+
+    plotRegistry.set(canvas.id, controller);
+  }
+
+  function initSirxLab() {
+    const canvas = $("sirx-canvas");
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    const betaInput = $("sirx-beta");
+    const gammaInput = $("sirx-gamma");
+    const i0Input = $("sirx-i0");
+    const daysInput = $("sirx-days");
+    const r0Out = $("sirx-r0");
+    const peakOut = $("sirx-peak");
+    const peakDayOut = $("sirx-peak-day");
+
+    if (!betaInput || !gammaInput || !i0Input || !daysInput) return;
+
+    const draw = (progress = 1) => {
+      const m = prepCanvas(canvas, ctx);
+      plotFrame(ctx, m, { xTicks: 5, yTicks: 4, xLabel: "days", yLabel: "population share" });
+
+      const beta = Number(betaInput.value);
+      const gamma = Number(gammaInput.value);
+      const i0 = Number(i0Input.value) / 100;
+      const days = Number(daysInput.value);
+
+      const dt = 0.3;
+      const steps = Math.max(2, Math.floor(days / dt));
+      let s = 1 - i0;
+      let i = i0;
+      let r = 0;
+      const S = [s], I = [i], R = [r];
+
+      for (let t = 0; t < steps; t++) {
+        const ds = -beta * s * i;
+        const di = beta * s * i - gamma * i;
+        const dr = gamma * i;
+        s = Math.max(0, s + ds * dt);
+        i = Math.max(0, i + di * dt);
+        r = Math.max(0, r + dr * dt);
+        const sum = s + i + r;
+        if (sum > 0) {
+          s /= sum;
+          i /= sum;
+          r /= sum;
+        }
+        S.push(s);
+        I.push(i);
+        R.push(r);
+      }
+
+      const visibleCount = Math.max(2, Math.floor(S.length * progress));
+      const Sv = S.slice(0, visibleCount);
+      const Iv = I.slice(0, visibleCount);
+      const Rv = R.slice(0, visibleCount);
+
+      const drawSeries = (series, color) => {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        series.forEach((v, idx) => {
+          const day = (idx / (series.length - 1)) * days;
+          const px = xMap(m, day, 0, days);
+          const py = yMap(m, v, 0, 1);
+          if (idx === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        });
+        ctx.stroke();
+      };
+
+      drawSeries(Sv, "#2f7d32");
+      drawSeries(Iv, "#a02020");
+      drawSeries(Rv, "#1f5fa8");
+
+      const peakI = Math.max(...I);
+      const peakIdx = I.indexOf(peakI);
+      const peakDay = peakIdx * dt;
+      const r0 = gamma > 0 ? beta / gamma : 0;
+
+      if (r0Out) r0Out.textContent = `R₀=${r0.toFixed(2)}`;
+      if (peakOut) peakOut.textContent = `Peak I=${(peakI * 100).toFixed(1)}%`;
+      if (peakDayOut) peakDayOut.textContent = `Peak day=${peakDay.toFixed(1)}`;
+
+      const c = Math.max(1, visibleCount - 1);
+      const trend = Iv[c] > Iv[Math.max(0, c - 1)] ? "rising" : "falling";
+      drawNote(ctx, m, "WHAT YOU'RE SEEING", `I(t) is ${trend}; decline starts after susceptible pool drops.`);
+    };
+
+    const controller = makeOneShot(draw, { speed: 0.055 });
+
+    bindRange("sirx-beta", (v) => v.toFixed(2), () => controller.restart());
+    bindRange("sirx-gamma", (v) => v.toFixed(2), () => controller.restart());
+    bindRange("sirx-i0", (v) => `${v.toFixed(1)}%`, () => controller.restart());
+    bindRange("sirx-days", (v) => String(v), () => controller.restart());
+
+    ensureLegend(canvas.closest(".plot-wrap"), [
+      { label: "S(t)", color: "#2f7d32" },
+      { label: "I(t)", color: "#a02020" },
+      { label: "R(t)", color: "#1f5fa8" },
+    ]);
+
+    plotRegistry.set(canvas.id, controller);
+  }
+
+  function initLogxLab() {
+    const canvas = $("logx-canvas");
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    const kInput = $("logx-k");
+    const aInput = $("logx-a");
+    const rInput = $("logx-r");
+    const rmseOut = $("logx-rmse");
+    const midOut = $("logx-mid");
+    const obs = [8, 11, 14, 19, 28, 36, 48, 59, 69, 76, 84, 89, 92, 96, 97, 99];
+    const tVals = obs.map((_, idx) => idx * 2);
+
+    if (!kInput || !aInput || !rInput) return;
+
+    const model = (t, K, A, r) => K / (1 + A * Math.exp(-r * t));
+
+    const draw = (progress = 1) => {
+      const m = prepCanvas(canvas, ctx);
+      plotFrame(ctx, m, { xTicks: 5, yTicks: 4, xLabel: "time", yLabel: "y" });
+
+      const K = Number(kInput.value);
+      const A = Number(aInput.value);
+      const r = Number(rInput.value);
+      const preds = tVals.map((t) => model(t, K, A, r));
+      const maxT = tVals[tVals.length - 1];
+      const maxY = Math.max(120, ...obs, ...preds) * 1.05;
+
+      let mse = 0;
+      for (let idx = 0; idx < obs.length; idx++) {
+        const d = obs[idx] - preds[idx];
+        mse += d * d;
+      }
+      const rmse = Math.sqrt(mse / obs.length);
+      const inflection = r > 0 ? Math.log(A) / r : 0;
+
+      ctx.fillStyle = "#121212";
+      obs.forEach((v, idx) => {
+        const px = xMap(m, tVals[idx], 0, maxT);
+        const py = yMap(m, v, 0, maxY);
+        ctx.beginPath();
+        ctx.arc(px, py, 3, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.strokeStyle = "#a02020";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      const jMax = Math.max(2, Math.floor(240 * progress));
+      for (let j = 0; j <= jMax; j++) {
+        const t = (j / 240) * maxT;
+        const y = model(t, K, A, r);
+        const px = xMap(m, t, 0, maxT);
+        const py = yMap(m, y, 0, maxY);
+        if (j === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      if (rmseOut) rmseOut.textContent = `RMSE=${rmse.toFixed(2)}`;
+      if (midOut) midOut.textContent = `Inflection t*=${inflection.toFixed(1)}`;
+
+      const fitText = rmse < 6
+        ? "Curve follows points well; fit error is low."
+        : "Visible gap to points; tune K, A, and r to improve fit.";
+      drawNote(ctx, m, "WHAT YOU'RE SEEING", fitText);
+    };
+
+    const controller = makeOneShot(draw, { speed: 0.055 });
+    bindRange("logx-k", (v) => String(v.toFixed(0)), () => controller.restart());
+    bindRange("logx-a", (v) => v.toFixed(1), () => controller.restart());
+    bindRange("logx-r", (v) => v.toFixed(2), () => controller.restart());
+
+    ensureLegend(canvas.closest(".plot-wrap"), [
+      { label: "model", color: "#a02020" },
+      { label: "observed", color: "#121212" },
+    ]);
+
+    plotRegistry.set(canvas.id, controller);
   }
 
   // -----------------------------
@@ -564,9 +868,7 @@
   }
 
   // -----------------------------
-  // Optional: Hook your existing interactive labs
-  // (If you keep your gdx/sirx/logx slides, call your init
-  // functions here and use ensureLegend(plotWrap, ...) there.)
+  // Existing interactive labs
   // -----------------------------
 
   // -----------------------------
@@ -574,6 +876,10 @@
   // -----------------------------
   function boot() {
     if (slides.length === 0) return;
+
+    window.toggleMenu = toggleMenu;
+    window.navigate = navigate;
+    window.goTo = goTo;
 
     buildThumbNav();
 
@@ -590,6 +896,9 @@
     // init animations (standalone)
     initLossLandscape();
     initReliabilityDiagram();
+    initGradientDescentLab();
+    initSirxLab();
+    initLogxLab();
 
     // activate first slide
     slides.forEach((s, i) => s.classList.toggle("active", i === 0));

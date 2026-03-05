@@ -116,6 +116,9 @@
               <li>Report calibrated parameters with <strong>quantified uncertainty</strong> and clearly stated <strong>limitations</strong>.</li>
               <li>Recognise when a model is <strong>unidentifiable</strong> and propose strategies to address it.</li>
             </ul>
+            <div class="note-box">
+              <strong>Simple lens.</strong> For each model, ask four questions: what are we fitting, how are we fitting, did it work on new data, and how sure are we?
+            </div>
             <div class="callout">
               <strong>Motivation.</strong> Each goal maps directly to an IMMC evaluation criterion: model justification,
               stated assumptions, sensitivity analysis, and recommendations.
@@ -142,6 +145,10 @@
               <div class="toc-item"><span class="toc-num">VI</span>Probability Calibration (ML Context)</div>
               <div class="toc-item"><span class="toc-num">VII</span>IMMC Case Studies &amp; Team Exercises</div>
               <div class="toc-item"><span class="toc-num">VIII</span>Reporting Checklist &amp; Best Practices</div>
+            </div>
+
+            <div class="callout">
+              <strong>Simple view.</strong> First we define terms, then fit parameters, then test whether the fit is trustworthy, and finally explain results clearly.
             </div>
           </div>
         </div>
@@ -196,6 +203,10 @@
               <strong>Dynamic models.</strong> States (e.g., \(S(t),\, I(t),\, R(t)\)) evolve over time, but calibration
               typically targets parameters (e.g., transmission rate \(\beta\)) rather than states directly.
             </div>
+
+            <div class="note-box">
+              <strong>Simple example.</strong> In a disease model, today's infected count is a state, but the transmission rate \(\beta\) is a parameter you estimate from data.
+            </div>
           </div>
         </div>
       </div>
@@ -229,6 +240,10 @@
             <div class="note-box">
               <strong>IMMC tip.</strong> State explicitly which of these three activities you performed. Distinguishing
               "equations are verified" from "model is validated against independent data" demonstrates sophisticated methodological awareness.
+            </div>
+
+            <div class="callout">
+              <strong>Quick memory aid.</strong> Verification = code is correct, calibration = numbers are fitted, validation = model is realistic.
             </div>
           </div>
         </div>
@@ -264,6 +279,10 @@
                   <li>Ignoring these leads to <strong>overconfident</strong> parameter estimates.</li>
                 </ul>
               </div>
+            </div>
+
+            <div class="note-box">
+              <strong>Simple example.</strong> If a thermometer is noisy, that is measurement noise; if people change behavior over time, that is process or structural change.
             </div>
           </div>
         </div>
@@ -315,6 +334,10 @@
             <div class="callout">
               This loop may iterate: poor validation may require returning to Step 1 (revise model structure) or Step 2 (revise loss function).
             </div>
+
+            <div class="note-box">
+              <strong>Simple workflow tip.</strong> Do not jump to Step 5 too early; first make sure Steps 1–4 are clearly documented and reproducible.
+            </div>
           </div>
         </div>
       </div>
@@ -358,6 +381,10 @@
 
             <div class="callout">
               <strong>Practical advice.</strong> Always plot residuals. A single residual plot can reveal more about model quality than any aggregate metric.
+            </div>
+
+            <div class="note-box">
+              <strong>Simple interpretation.</strong> Positive residual means underprediction; negative residual means overprediction.
             </div>
           </div>
         </div>
@@ -408,6 +435,10 @@
               <strong>IMMC note.</strong> You must explain <em>why</em> your chosen loss matches the context — what noise process,
               what outlier structure, what decision stakes are involved.
             </div>
+
+            <div class="callout">
+              <strong>Simple rule.</strong> Start with SSE for clean data, switch to MAE when outliers are common, and use likelihood when you need full uncertainty reporting.
+            </div>
           </div>
         </div>
       </div>
@@ -434,6 +465,10 @@
             <div class="callout">
               <strong>Determining weights.</strong> Use domain knowledge, replicate measurements, or estimate variance as a function
               of the predictor. Document your weighting rationale.
+            </div>
+
+            <div class="note-box">
+              <strong>Simple example.</strong> If one sensor is twice as noisy as another, give it less weight so it does not distort the fit.
             </div>
           </div>
         </div>
@@ -476,6 +511,10 @@
 
             <div class="callout">
               <strong>IMMC application.</strong> Regularisation prevents overfitting when calibrating models with many parameters on limited data — a common situation in competition settings.
+            </div>
+
+            <div class="note-box">
+              <strong>Simple interpretation.</strong> Regularisation is a "complexity penalty" that prefers reasonable parameter sizes unless the data strongly supports larger values.
             </div>
           </div>
         </div>
@@ -521,6 +560,10 @@
             <div class="note-box">
               <strong>IMMC move.</strong> If you suspect non-identifiability, report it explicitly and explain what additional data
               or assumptions would resolve it.
+            </div>
+
+            <div class="callout">
+              <strong>Simple check.</strong> If very different parameter sets produce almost the same curve, the data is not informative enough to identify each parameter separately.
             </div>
           </div>
         </div>
@@ -733,6 +776,10 @@
                   Blends Gauss–Newton (fast) and gradient descent (safe) via adaptive damping. The industry standard for nonlinear least squares.
                 </p>
               </div>
+            </div>
+
+            <div class="note-box">
+              <strong>Simple interpretation.</strong> LM is a smart compromise: it takes bold steps when the fit is improving and safer steps when updates become unstable.
             </div>
           </div>
         </div>
@@ -1189,6 +1236,10 @@
                 <p>Expected Calibration Error — average gap between predicted probability and observed frequency across bins.</p>
               </div>
             </div>
+
+            <div class="callout">
+              <strong>Simple check.</strong> If your model says “70%” many times, then about 7 out of 10 of those cases should really happen.
+            </div>
           </div>
         </div>
       </div>
@@ -1546,6 +1597,10 @@
                   <li>Calibration results connected to recommendations.</li>
                 </ul>
               </div>
+            </div>
+
+            <div class="callout">
+              <strong>Simple takeaway.</strong> A strong IMMC report shows not only the best-fit numbers, but also why they are trustworthy and where they may fail.
             </div>
           </div>
         </div>
